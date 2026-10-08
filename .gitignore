@@ -1,35 +1,151 @@
-# Gradle files
-.gradle/
-build/
-.kotlin/
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Forfaits Data — Airtel RDC</title>
+<style>
+  :root{
+    --rouge:#e30613; --or:#ffcc00; --cyan:#00b8d4; --bleu:#0066cc;
+    --jaune:#ffd400; --vert:#00a651; --violet:#7b2ff7; --rose:#ff2d87;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{
+    font-family:'Segoe UI',system-ui,sans-serif;
+    background:linear-gradient(135deg,var(--violet),var(--bleu),var(--cyan));
+    min-height:100vh;color:#fff;padding:24px;
+  }
+  header{text-align:center;margin-bottom:32px;}
+  header h1{
+    font-size:2.4rem;
+    background:linear-gradient(90deg,var(--rouge),var(--or),var(--vert),var(--cyan),var(--rose));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    font-weight:800;letter-spacing:1px;
+  }
+  header p{opacity:.9;margin-top:8px;}
+  .grid{
+    display:grid;gap:18px;
+    grid-template-columns:repeat(auto-fill,minmax(230px,1fr));
+    max-width:1100px;margin:0 auto;
+  }
+  .card{
+    background:rgba(255,255,255,0.1);
+    border:2px solid rgba(255,255,255,0.25);
+    border-radius:18px;padding:20px;
+    backdrop-filter:blur(8px);
+    transition:transform .2s, box-shadow .2s;
+    display:flex;flex-direction:column;gap:10px;
+  }
+  .card:hover{transform:translateY(-6px);box-shadow:0 12px 30px rgba(0,0,0,.35);}
+  .card .price{
+    font-size:1.8rem;font-weight:800;
+    background:linear-gradient(90deg,var(--or),var(--jaune));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .card .data{font-size:1.1rem;font-weight:600;}
+  .card .validity{font-size:.9rem;opacity:.85;}
+  .card button{
+    margin-top:auto;padding:12px;border:none;border-radius:12px;
+    font-weight:700;cursor:pointer;font-size:1rem;color:#fff;
+    background:linear-gradient(90deg,var(--rouge),var(--rose));
+    transition:filter .2s;
+  }
+  .card button:hover{filter:brightness(1.15);}
+  .note{
+    max-width:1100px;margin:32px auto 0;padding:18px;
+    background:rgba(0,0,0,0.3);border-left:5px solid var(--or);
+    border-radius:12px;font-size:.95rem;line-height:1.5;
+  }
+  .note strong{color:var(--or);}
+  .modal{
+    position:fixed;inset:0;background:rgba(0,0,0,.7);
+    display:none;align-items:center;justify-content:center;padding:20px;z-index:50;
+  }
+  .modal.open{display:flex;}
+  .modal-box{
+    background:#fff;color:#111;border-radius:18px;padding:26px;
+    max-width:420px;width:100%;text-align:center;
+  }
+  .modal-box h2{color:var(--rouge);margin-bottom:12px;}
+  .modal-box ol{text-align:left;margin:14px 0 18px 20px;line-height:1.7;}
+  .modal-box code{
+    background:#f2f2f2;padding:2px 8px;border-radius:6px;
+    font-weight:700;color:var(--bleu);
+  }
+  .modal-box button{
+    margin-top:10px;padding:12px 20px;border:none;border-radius:10px;
+    background:var(--bleu);color:#fff;font-weight:700;cursor:pointer;
+  }
+</style>
+</head>
+<body>
 
-# Local configuration file (sdk path, etc)
-local.properties
+<header>
+  <h1>Forfaits Data Airtel RDC</h1>
+  <p>Choisissez votre forfait — paiement via USSD officiel ou l'app Airtel Money</p>
+</header>
 
-# Log/OS Files
-*.log
+<div class="grid" id="grid"></div>
 
-# Android Studio generated files and folders
-captures/
-.externalNativeBuild/
-.cxx/
-*.aab
-*.apk
-output-metadata.json
+<div class="note">
+  <strong>⚠️ Important :</strong> Nous ne demandons <u>jamais</u> votre code PIN ni votre OTP sur ce site.
+  Le paiement se fait uniquement via <code>*501#</code> ou l'application officielle Airtel Money,
+  où vous confirmez la transaction vous-même sur votre téléphone.
+</div>
 
-# IntelliJ
-*.iml
-.idea/
-misc.xml
-deploymentTargetDropDown.xml
-render.experimental.xml
+<div class="modal" id="modal">
+  <div class="modal-box">
+    <h2>Paiement sécurisé</h2>
+    <p>Pour le forfait <strong id="mPlan"></strong> (<span id="mPrice"></span> CDF) :</p>
+    <ol>
+      <li>Composez <code>*501#</code> sur votre téléphone</li>
+      <li>Choisissez « Payer un marchand »</li>
+      <li>Entrez le code marchand : <code id="mCode"></code></li>
+      <li>Confirmez le montant et validez avec <em>votre</em> PIN (sur votre téléphone uniquement)</li>
+    </ol>
+    <button onclick="closeModal()">J'ai compris</button>
+  </div>
+</div>
 
-# Keystore files
-*.jks
-*.keystore
+<script>
+const plans = [
+  {price:100,  data:"250 Mo",  validity:"1 heure"},
+  {price:200,  data:"500 Mo",  validity:"1 jour"},
+  {price:500,  data:"1 Go",    validity:"3 jours"},
+  {price:1000, data:"2 Go",    validity:"7 jours"},
+  {price:2000, data:"3 Go",    validity:"14 jours"},
+  {price:5000, data:"4 Go",    validity:"1 mois"},
+  {price:10000, data:"5 Go",   validity:"1 mois"},
+];
 
-# Google Services (e.g. APIs or Firebase)
-google-services.json
+const MERCHANT_CODE = "MCH-XXXXX"; // remplacez par votre code marchand officiel
 
-# Android Profiling
-*.hprof
+const grid = document.getElementById('grid');
+plans.forEach(p => {
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.innerHTML = `
+    <div class="price">${p.price.toLocaleString('fr-FR')} CDF</div>
+    <div class="data">${p.data}</div>
+    <div class="validity">Validité : ${p.validity}</div>
+    <button>Acheter</button>
+  `;
+  card.querySelector('button').addEventListener('click', () => openModal(p));
+  grid.appendChild(card);
+});
+
+function openModal(plan){
+  document.getElementById('mPlan').textContent = plan.data;
+  document.getElementById('mPrice').textContent = plan.price.toLocaleString('fr-FR');
+  document.getElementById('mCode').textContent = MERCHANT_CODE;
+  document.getElementById('modal').classList.add('open');
+}
+function closeModal(){
+  document.getElementById('modal').classList.remove('open');
+}
+document.getElementById('modal').addEventListener('click', e => {
+  if(e.target.id === 'modal') closeModal();
+});
+</script>
+</body>
+</html>
